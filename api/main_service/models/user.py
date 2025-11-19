@@ -4,8 +4,6 @@ from .property import Property, City
 
 
 class User(models.Model):
-    __table__ = "users"
-
     email = models.EmailField(unique=True)
     phone = models.CharField(max_length=15, unique=True)
     first_name = models.CharField(max_length=30)
@@ -25,6 +23,8 @@ class User(models.Model):
 
     matches = models.ManyToManyField(Property, blank=True)
 
+    class Meta:
+        db_table = "users"
 
     def __str__(self):
         return f"{self.first_name}, email: {self.email}, phone: {self.phone}"

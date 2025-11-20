@@ -18,6 +18,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path
 
+from main_service.urls import urlpatterns as main_service_urls
+
 urlpatterns = [
     path("admin/", admin.site.urls),
-]
+] + main_service_urls

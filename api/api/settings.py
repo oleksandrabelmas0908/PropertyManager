@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    'drf_spectacular',
     "rest_framework",
     "main_service",
 ]
@@ -105,6 +106,23 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
+
+
+REST_FRAMEWORK = {
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    # Use drf-spectacular's AutoSchema so Spectacular* views work correctly
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
+
+
+# drf-spectacular settings (minimal). Customize as needed.
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'PropertyManager API',
+    'DESCRIPTION': 'API schema for the PropertyManager project',
+    'VERSION': '1.0.0',
+}
 
 
 # Internationalization

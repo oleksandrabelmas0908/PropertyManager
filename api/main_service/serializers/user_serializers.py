@@ -2,6 +2,10 @@ from rest_framework import serializers
 from main_service.models import User
 
 
+class InputDataSerializer(serializers.Serializer):
+    input_data = serializers.CharField()
+
+
 class UserSerializerIn(serializers.ModelSerializer):
     class Meta:
         model = User

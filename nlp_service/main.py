@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from schema import DataModel
+from schema import DataModel, InputModel
 from parcer import parse_text
 
 
@@ -20,9 +20,9 @@ app.add_middleware(
 
 @app.post("/parse/", response_model=DataModel)
 def read_root(
-    text: str
+    input: InputModel
 ) -> DataModel:
-    return parse_text(text)
+    return parse_text(input.input_data)
 
 
 if __name__ == "__main__":

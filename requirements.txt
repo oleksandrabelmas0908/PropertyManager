@@ -29,8 +29,9 @@ langsmith==0.4.44
 markdown-it-py==4.0.0
 MarkupSafe==3.0.3
 mdurl==0.1.2
-psycopg==3.2.13
-psycopg2-binary==2.9.11
+ollama==0.6.1
+orjson==3.11.4
+packaging==25.0
 pydantic==2.12.4
 pydantic_core==2.41.5
 Pygments==2.19.2

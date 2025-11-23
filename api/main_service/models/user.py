@@ -28,3 +28,20 @@ class User(models.Model):
 
     def __str__(self):
         return f"{self.first_name}, email: {self.email}, phone: {self.phone}"
+    
+    def get_matched_properties(self):
+        return [
+            {
+                "id": prop.id,
+                "title": prop.title,
+                "description": prop.description,
+                "city": prop.city.name,
+                "bedrooms": prop.bedrooms,
+                "price": float(prop.price),
+                "pets": prop.pets,
+                "pool": prop.pool,
+                "yard": prop.yard,
+                "parking": prop.parking,
+            }
+            for prop in self.matches.select_related('city').all()
+        ]

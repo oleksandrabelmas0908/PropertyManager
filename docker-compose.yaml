@@ -12,6 +12,7 @@ services:
       - ./api:/api
     environment:
       - PARSER_SERVICE_URL=http://nlp:8000
+      - MATCHING_SERVICE_URL=http://matching-service:8000
     env_file:
       - .env
     command: 

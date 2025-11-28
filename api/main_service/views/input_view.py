@@ -126,12 +126,14 @@ class MatchView(APIView):
             logger.info(f"No matches: {matches}")
         
         try:
-            # produce(message={"user_id": int(user_id)}, topic="match_request_topic")
-            response = requests.post(
-                url=f"{MATCHING_SERVICE_URL}/match/",
-                json={"user_id": int(user_id)}
+            produce(message={"user_id": int(user_id)}, topic="match_topic")
+            status_match = requests.get(
+                url=f"{MATCHING_SERVICE_URL}/match/"
             )
-            matched_properties = response.json()
+            matched_properties = get_messages(
+                topic="proceeded_match_topic",
+                group_id="api_service_match_group"
+            )
         except Exception as e:
             logger.error(f"Error fetching matched properties: {e}")
             return Response(

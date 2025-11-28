@@ -10,7 +10,15 @@ DB_PASSWORD = os.getenv("POSTGRES_PASSWORD", "password")
 
 engine = create_engine(f"postgresql://{DB_USER}:{DB_PASSWORD}@db:5432/{DB_NAME}", echo=True)
 
+SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+
 
 def get_session():
-    with sessionmaker(bind=engine).begin() as session:
+    session = SessionLocal()
+    try:
         yield session
+    except Exception:
+        session.rollback()
+        raise
+    finally:
+        session.close()

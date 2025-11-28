@@ -69,7 +69,7 @@ def get_and_set_matching_properties(
                 pool=match.pool,
                 yard=match.yard,
                 parking=match.parking
-            )
+            ).model_dump()
             for match in matches
         ]
         

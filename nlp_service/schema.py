@@ -14,9 +14,16 @@ class DataModel(BaseModel):
     bedrooms: int
     max_budget: float
     monthly_income: float
-    day_of_moving_in: date  
     pets: bool 
     pool: bool 
     yard: bool 
     parking: bool 
     city: str
+
+
+class DataModelLLM(DataModel): 
+    day_of_moving_in: date  
+
+
+class DataModelParsed(DataModel): 
+    day_of_moving_in: str

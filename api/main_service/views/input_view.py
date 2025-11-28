@@ -1,3 +1,4 @@
+from datetime import date
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -11,10 +12,14 @@ import logging
 
 from main_service.serializers.user_serializers import InputDataSerializer, UserSerializerIn
 from main_service.models import City, User
+from broker import get_messages, produce
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+
+BOOTSTRAP_SERVERS = os.getenv("KAFKA_BOOTSTRAP_SERVERS", "kafka:9092")
 
 
 PARSER_SERVICE_URL = os.getenv("PARSER_SERVICE_URL", "http://nlp:8000")
@@ -27,30 +32,56 @@ class InputView(APIView):
     
     def post(self, request):
         input_data = request.data.get("input_data")
-
-        response = requests.post(
-            url=f"{PARSER_SERVICE_URL}/parse/",
-            json={"input_data": input_data}
-        )
-        processed_data = response.json()
-
+        
         try:
-            city = City.objects.get_or_create(name=processed_data["city"])
-            city_id = city[0].id
-            processed_data["city"] = city_id
+            produce(message=input_data, topic="send_to_parse_topic")
 
-            serializer = UserSerializerIn(data=processed_data)
-            serializer.is_valid(raise_exception=True)
-            serializer.save()
+            status_data = requests.get(url=f"{PARSER_SERVICE_URL}/parse/") 
 
+            messages = get_messages(topic="parsed_data_topic", group_id="api_service_group")
+            if not messages:
+                logger.info("No messages received from 'parsed_data_topic'.")
+                return Response(
+                    {"message": "no processed messages"},
+                    status=status.HTTP_200_OK
+                )
         except Exception as e:
+            logger.error(f"Error in processing input data: {e}")
             return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
+                {"error": e},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+    
+        processed_messages = []
+        for processed_data in messages:
+            try:
+
+                user = User.objects.get(email=processed_data["email"])
+                if user:
+                    logger.info(f"User with email {processed_data['email']} already exists. Skipping.")
+                    continue
+
+                city = City.objects.get_or_create(name=processed_data["city"])[0]
+                
+                city_id = city.id
+                processed_data["city"] = city_id
+
+                processed_data["day_of_moving_in"] = date.fromisoformat(processed_data["day_of_moving_in"])
+
+                serializer = UserSerializerIn(data=processed_data)
+                serializer.is_valid(raise_exception=True)
+                serializer.save()
+
+                processed_messages.append(serializer.data)
+
+            except Exception as e:
+                return Response(
+                    {"error": str(e)},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
         
         return Response(
-            {"processed_data": serializer.data},
+            {"processed_data": processed_messages},
             status=status.HTTP_200_OK
         )
     
@@ -95,6 +126,7 @@ class MatchView(APIView):
             logger.info(f"No matches: {matches}")
         
         try:
+            # produce(message={"user_id": int(user_id)}, topic="match_request_topic")
             response = requests.post(
                 url=f"{MATCHING_SERVICE_URL}/match/",
                 json={"user_id": int(user_id)}

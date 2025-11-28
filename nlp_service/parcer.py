@@ -1,13 +1,19 @@
 from langchain_ollama import ChatOllama
-from schema import DataModel
+from schema import DataModelLLM, DataModelParsed
+from datetime import date
 
 import os
+import logging
 
 
 OLLAMA_HOST = os.getenv("OLLAMA_HOST", "http://localhost:11434")
 
 
-def parse_text(text: str) -> DataModel:
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+
+def parse_text(text: str) -> DataModelParsed:
     model = ChatOllama(
         model="phi3",
         base_url=OLLAMA_HOST,
@@ -19,9 +25,11 @@ def parse_text(text: str) -> DataModel:
         ("human", text),
     ]
     
-    response = model.with_structured_output(DataModel).invoke(messages)
+    response = model.with_structured_output(DataModelLLM).invoke(messages)
 
-    return DataModel(
+    logger.info(f"day of moving_in before parsing: {response.day_of_moving_in}")
+
+    return DataModelParsed(
         email=response.email,
         phone=response.phone,
         first_name=response.first_name,
@@ -29,7 +37,7 @@ def parse_text(text: str) -> DataModel:
         bedrooms=response.bedrooms,
         max_budget=response.max_budget,
         monthly_income=response.monthly_income,
-        day_of_moving_in=response.day_of_moving_in,
+        day_of_moving_in=str(response.day_of_moving_in),
         pets=response.pets,
         pool=response.pool,
         yard=response.yard,

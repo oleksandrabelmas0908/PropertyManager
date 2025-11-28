@@ -4,12 +4,13 @@ services:
   api:
     container_name: api
     build: 
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
     ports:
       - "8000:8000"
     volumes:
       - ./api:/api
+      - ./broker:/api/broker
     environment:
       - PARSER_SERVICE_URL=http://nlp:8000
       - MATCHING_SERVICE_URL=http://matching-service:8000
@@ -21,35 +22,40 @@ services:
       python manage.py runserver 0.0.0.0:8000"
     depends_on:
       - db
+      - kafka
 
   nlp_service:
     container_name: nlp
     build: 
-      context: ./nlp_service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: nlp_service/Dockerfile
     ports:
       - "8001:8000"
     volumes:
       - ./nlp_service:/app
+      - ./broker:/app/broker
     env_file:
       - .env
     depends_on:
       - ollama
       - db
+      - kafka
 
   matching_service:
     container_name: matching-service
     build: 
-      context: ./matching_service
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: matching_service/Dockerfile
     ports:
       - "8002:8000"
     volumes:
       - ./matching_service:/app
+      - ./broker:/app/broker
     env_file:
       - .env
     depends_on:
       - db
+      - kafka
 
   db:
     container_name: db
@@ -66,6 +72,41 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data
 
+  kafka:
+    container_name: kafka
+    image: confluentinc/cp-kafka:latest
+    ports:
+      - 9092:9092
+    environment:
+      KAFKA_KRAFT_MODE: true
+
+      CLUSTER_ID: 'ZkXW3b4SRdO6xY2j1F7gTA=='
+      KAFKA_NODE_ID: 1
+
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+
+      KAFKA_LISTENERS: PLAINTEXT://kafka:9092,CONTROLLER://kafka:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-cluster-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:9092
+      LOGGING_LEVEL_ROOT: WARN
+      LOGGING_LEVEL_COM_PROVECTUS: ERROR
+    depends_on:
+      - kafka
+
   ollama:
     image: ollama/ollama:latest
     container_name: ollama
@@ -80,3 +121,4 @@ services:
 volumes:
   db_data:
   ollama_data:
+  kafka_data:
